@@ -21,4 +21,3 @@ CREATE SCHEMA api;
 -- and SELECT from views explicitly designed for read access.
 GRANT USAGE ON SCHEMA api TO rebook_app;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA api TO rebook_app;
--- (Note: View grants will be added later when the view is created)
