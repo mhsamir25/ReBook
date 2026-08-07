@@ -1,2 +1,0 @@
---The core tables
---This will contain all the core tables

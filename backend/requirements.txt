@@ -41,3 +41,5 @@ uvicorn==0.52.1
 uvloop==0.22.1
 watchfiles==1.2.0
 websockets==17.0.1
+asyncpg
+python-jose[cryptography]

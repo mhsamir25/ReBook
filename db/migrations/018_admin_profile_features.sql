@@ -1,8 +1,6 @@
 -- 018_admin_profile_features.sql
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 1. REMOVE USER (Hard Delete with Cascade)
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE PROCEDURE api.remove_user(p_admin_id UUID, p_target_user UUID)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -52,9 +50,7 @@ COMMENT ON PROCEDURE api.remove_user IS
     'Admin-only: Hard deletes a user and cascades the deletion to their wishlists, reviews, transactions, lending records, and listings.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 2. GET ALL LISTINGS FOR ADMIN
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE OR REPLACE FUNCTION api.admin_get_all_listings(p_admin_id UUID)
 RETURNS TABLE(
     listing_id   UUID,

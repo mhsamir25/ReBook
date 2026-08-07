@@ -349,3 +349,47 @@ $$;
 
 COMMENT ON FUNCTION api.topup_wallet IS
     'Adds funds to a user wallet. Triggers the audit_log trigger automatically. For demo/admin use.';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- LUHN ALGORITHM VALIDATION
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION api.is_valid_luhn(card_number TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+    cleaned_card TEXT;
+    len INT;
+    n_check INT := 0;
+    b_even BOOLEAN := false;
+    c_digit CHAR(1);
+    n_digit INT;
+BEGIN
+    -- Remove non-digits
+    cleaned_card := regexp_replace(card_number, '\D', '', 'g');
+    len := length(cleaned_card);
+
+    IF len < 13 OR len > 19 THEN
+        RETURN false;
+    END IF;
+
+    FOR i IN REVERSE len..1 LOOP
+        c_digit := substr(cleaned_card, i, 1);
+        n_digit := c_digit::INT;
+
+        IF b_even THEN
+            n_digit := n_digit * 2;
+            IF n_digit > 9 THEN
+                n_digit := n_digit - 9;
+            END IF;
+        END IF;
+
+        n_check := n_check + n_digit;
+        b_even := NOT b_even;
+    END LOOP;
+
+    RETURN (n_check % 10) = 0;
+END;
+$$;

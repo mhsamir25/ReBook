@@ -7,6 +7,10 @@ DROP TABLE IF EXISTS core.wishlists CASCADE;
 DROP TRIGGER IF EXISTS trg_notify_wishlist ON core.listings;
 DROP FUNCTION IF EXISTS core.fn_notify_wishlist_match() CASCADE;
 
+-- Drop old api wishlist functions based on isbn
+DROP FUNCTION IF EXISTS api.add_to_wishlist(UUID, isbn13);
+DROP FUNCTION IF EXISTS api.remove_from_wishlist(UUID, isbn13);
+
 -- 2. Create new wishlists on listing_id
 CREATE TABLE core.wishlists (
     user_id  UUID NOT NULL REFERENCES core.users(user_id),
