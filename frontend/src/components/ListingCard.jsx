@@ -95,6 +95,11 @@ export default function ListingCard({ listing }) {
             onError={() => setHasImage(false)}
           />
           <div className="listing-cover-overlay">
+            <div className="listing-overlay-top listing-overlay-top-photo">
+              <h2 className="listing-overlay-title">{listing.title}</h2>
+              <p className="listing-overlay-author">by {listing.author}</p>
+            </div>
+
             <strong className="listing-overlay-price">
               ${Number.parseFloat(price || 0).toFixed(2)}
               {isRent && <span className="listing-price-label">/day</span>}
