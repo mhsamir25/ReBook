@@ -1,11 +1,9 @@
 // src/components/Navbar.jsx
 import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useState } from 'react';
 
 export default function Navbar() {
   const { isLoggedIn, user } = useAuth();
-  const [open, setOpen] = useState(false);
 
   return (
     <nav className="navbar">
@@ -20,26 +18,7 @@ export default function Navbar() {
           ReBook
         </Link>
 
-        <button
-          className="navbar-toggle"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          aria-expanded={open}
-          onClick={() => setOpen((s) => !s)}
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            {open ? (
-              <path d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <>
-                <path d="M3 12h18" />
-                <path d="M3 6h18" />
-                <path d="M3 18h18" />
-              </>
-            )}
-          </svg>
-        </button>
-
-        <div className={`navbar-links ${open ? 'open' : ''}`} onClick={() => setOpen(false)}>
+        <div className="navbar-links">
           <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
             Browse
           </NavLink>
