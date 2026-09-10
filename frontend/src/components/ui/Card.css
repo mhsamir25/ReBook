@@ -1,0 +1,4 @@
+.ds-card{background:var(--ds-color-surface);border-radius:12px;padding:16px;border:1px solid rgba(24,33,47,0.04);box-shadow:var(--ds-shadow-1)}
+.ds-card-title{margin-bottom:8px}
+.ds-card-body{margin-bottom:12px}
+.ds-card-footer{border-top:1px solid rgba(24,33,47,0.03);padding-top:8px;color:var(--ds-color-muted)}
