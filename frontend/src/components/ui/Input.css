@@ -1,4 +1,0 @@
-.ds-form-field{display:flex;flex-direction:column;gap:6px}
-.ds-label{font-weight:700;color:var(--ds-color-muted);font-size:0.9rem}
-.ds-input{padding:10px 12px;border-radius:8px;border:1px solid rgba(24,33,47,0.08);background:#fff}
-.ds-input:focus{outline:none;box-shadow:0 0 0 4px rgba(180,35,24,0.06);border-color:var(--ds-color-accent)}

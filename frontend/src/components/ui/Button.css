@@ -1,8 +1,0 @@
-.ds-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-weight:700;border:1px solid transparent;cursor:pointer;transition:all 180ms ease}
-.ds-btn-primary{background:var(--ds-color-accent);color:#fff}
-.ds-btn-primary:hover{background:var(--ds-color-accent-2)}
-.ds-btn-secondary{background:#fff;border:1px solid rgba(24,33,47,0.06);color:var(--ds-color-text)}
-.ds-btn-ghost{background:transparent;color:var(--ds-color-text)}
-.ds-btn-sm{padding:7px 10px;font-size:0.85rem}
-.ds-btn-md{padding:10px 14px;font-size:1rem}
-.ds-btn-lg{padding:14px 18px;font-size:1.05rem}

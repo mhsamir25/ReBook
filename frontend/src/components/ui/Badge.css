@@ -1,5 +1,0 @@
-.ds-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-weight:800;font-size:0.78rem}
-.ds-badge-sale{background:#fff1ef;color:var(--ds-color-accent);border:1px solid rgba(180,35,24,0.06)}
-.ds-badge-rent{background:#e6f4f3;color:var(--ds-color-info);border:1px solid rgba(0,109,119,0.06)}
-.ds-badge-success{background:#ecfdf5;color:var(--ds-color-success);border:1px solid rgba(4,120,87,0.06)}
-.ds-badge-danger{background:#fff0f0;color:var(--ds-color-danger);border:1px solid rgba(200,30,30,0.06)}

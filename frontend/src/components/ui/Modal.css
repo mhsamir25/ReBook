@@ -1,5 +1,0 @@
-.ds-modal-backdrop{position:fixed;inset:0;background:rgba(8,12,20,0.45);display:grid;place-items:center;z-index:200}
-.ds-modal{background:#fff;border-radius:12px;max-width:720px;width:calc(100% - 48px);padding:20px;box-shadow:var(--ds-shadow-3)}
-.ds-modal-title{margin-bottom:12px}
-.ds-modal-body{margin-bottom:12px}
-.ds-modal-actions{text-align:right}
