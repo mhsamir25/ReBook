@@ -43,3 +43,4 @@ watchfiles==1.2.0
 websockets==17.0.1
 asyncpg
 python-jose[cryptography]
+motor==3.6.0

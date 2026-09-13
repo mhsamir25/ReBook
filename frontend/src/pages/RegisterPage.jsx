@@ -33,8 +33,8 @@ export default function RegisterPage() {
         <h1 className="auth-title">Create an account</h1>
         <p className="auth-sub">Join ReBook and start buying or lending books.</p>
 
-        {error   && <div className="alert alert-error"   style={{ marginBottom: '1.2rem' }}>{error}</div>}
-        {success && <div className="alert alert-success" style={{ marginBottom: '1.2rem' }}>{success}</div>}
+        {error && <div className="alert alert-error mt-2">{error}</div>}
+        {success && <div className="alert alert-success mt-2">{success}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit} id="register-form">
           <div className="form-group">
@@ -49,7 +49,7 @@ export default function RegisterPage() {
           </div>
 
           <button id="btn-register" type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? <><span className="spinner spinner-sm" /> Creating…</> : 'Create Account'}
+            {loading ? <><span className="spinner spinner-sm" /> Creating...</> : 'Create Account'}
           </button>
         </form>
 

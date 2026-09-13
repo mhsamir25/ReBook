@@ -34,7 +34,7 @@ export default function LoginPage() {
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-sub">Sign in to your ReBook account.</p>
 
-        {error && <div className="alert alert-error" style={{ marginBottom: '1.2rem' }}>{error}</div>}
+        {error && <div className="alert alert-error mt-2">{error}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit} id="login-form">
           <div className="form-group">
@@ -44,11 +44,11 @@ export default function LoginPage() {
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="login-password">Password</label>
-            <input id="login-password" name="password" type="password" className="form-input" placeholder="••••••••"
+            <input id="login-password" name="password" type="password" className="form-input" placeholder="Password"
               value={form.password} onChange={handleChange} required autoComplete="current-password" />
           </div>
           <button id="btn-login" type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? <><span className="spinner spinner-sm" /> Signing in…</> : 'Sign In'}
+            {loading ? <><span className="spinner spinner-sm" /> Signing in...</> : 'Sign In'}
           </button>
         </form>
 

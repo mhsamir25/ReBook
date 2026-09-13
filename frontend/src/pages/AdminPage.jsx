@@ -53,11 +53,13 @@ export default function AdminPage() {
   return (
     <main className="page">
       <div className="container">
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.3rem', letterSpacing: '-0.02em' }}>Admin Panel</h1>
-        <p className="text-muted" style={{ marginBottom: '2rem' }}>Manage users, listings, and inspect the audit trail.</p>
+        <header className="page-header">
+          <h1 className="page-title">Admin Panel</h1>
+          <p className="page-subtitle">Manage users, listings, and audit activity.</p>
+        </header>
 
         {msg.text && (
-          <div className={`alert ${msg.type === 'error' ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: '1.5rem' }}>
+          <div className={`alert ${msg.type === 'error' ? 'alert-error' : 'alert-success'} mt-2`}>
             {msg.text}
           </div>
         )}
@@ -74,7 +76,7 @@ export default function AdminPage() {
           <>
             {/* Pending Listings */}
             {tab === 'pending' && (
-              <div className="card" style={{ overflow: 'hidden' }}>
+              <div className="card table-card fade-up">
                 <table>
                   <thead>
                     <tr>
@@ -83,15 +85,15 @@ export default function AdminPage() {
                   </thead>
                   <tbody>
                     {pending.length === 0 && (
-                      <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--clr-text-dim)', padding: '2rem' }}>No pending listings. All caught up!</td></tr>
+                      <tr><td colSpan={6} className="table-empty">No pending listings. All caught up!</td></tr>
                     )}
                     {pending.map(l => (
                       <tr key={l.listing_id}>
-                        <td style={{ fontWeight: 600 }}>{l.title}</td>
+                        <td className="fw-700">{l.title}</td>
                         <td className="text-muted">{l.seller_email}</td>
                         <td><Badge type={l.type === 'rent' ? 'rent' : 'sale'}>{l.type}</Badge></td>
-                        <td style={{ color: 'var(--clr-accent-2)', fontWeight: 700 }}>
-                          ${parseFloat(l.price || l.daily_rent_fee || 0).toFixed(2)}
+                        <td className="fw-700 text-accent">
+                          ${Number.parseFloat(l.price || l.daily_rent_fee || 0).toFixed(2)}
                           {l.type === 'rent' ? '/day' : ''}
                         </td>
                         <td className="text-dim">{new Date(l.created_at).toLocaleDateString()}</td>
@@ -109,7 +111,7 @@ export default function AdminPage() {
 
             {/* Users */}
             {tab === 'users' && (
-              <div className="card" style={{ overflow: 'hidden' }}>
+              <div className="card table-card fade-up">
                 <table>
                   <thead>
                     <tr><th>Email</th><th>Role</th><th>Verified</th><th>Balance</th><th>Joined</th><th>Action</th></tr>
@@ -117,10 +119,10 @@ export default function AdminPage() {
                   <tbody>
                     {users.map(u => (
                       <tr key={u.user_id}>
-                        <td style={{ fontWeight: 600 }}>{u.email}</td>
+                        <td className="fw-700">{u.email}</td>
                         <td><Badge type={u.role === 'admin' ? 'danger' : 'sale'}>{u.role}</Badge></td>
                         <td>{u.is_verified ? <Badge type="success">Yes</Badge> : <Badge type="warn">No</Badge>}</td>
-                        <td style={{ color: 'var(--clr-green)', fontWeight: 700 }}>${parseFloat(u.wallet_balance).toFixed(2)}</td>
+                        <td className="fw-700 text-green">${Number.parseFloat(u.wallet_balance).toFixed(2)}</td>
                         <td className="text-dim">{new Date(u.created_at).toLocaleDateString()}</td>
                         <td>
                           {!u.is_verified && (
@@ -138,7 +140,7 @@ export default function AdminPage() {
 
             {/* Audit Log */}
             {tab === 'audit' && (
-              <div className="card" style={{ overflow: 'hidden' }}>
+              <div className="card table-card fade-up">
                 <table>
                   <thead>
                     <tr><th>Table</th><th>Action</th><th>Old Value</th><th>New Value</th><th>Time</th></tr>
@@ -146,13 +148,13 @@ export default function AdminPage() {
                   <tbody>
                     {audit.map(a => (
                       <tr key={a.audit_id}>
-                        <td><code style={{ color: 'var(--clr-teal)', fontSize: '0.8rem' }}>{a.table_name}</code></td>
+                        <td><code>{a.table_name}</code></td>
                         <td><Badge type="warn">{a.action}</Badge></td>
-                        <td className="text-dim" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                          {a.old_data ? JSON.stringify(a.old_data) : '—'}
+                        <td className="audit-cell text-dim">
+                          {a.old_data ? JSON.stringify(a.old_data) : '-'}
                         </td>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--clr-green)' }}>
-                          {a.new_data ? JSON.stringify(a.new_data) : '—'}
+                        <td className="audit-cell text-green">
+                          {a.new_data ? JSON.stringify(a.new_data) : '-'}
                         </td>
                         <td className="text-dim">{new Date(a.changed_at).toLocaleString()}</td>
                       </tr>

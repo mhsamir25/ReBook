@@ -1,9 +1,6 @@
 -- Core business logic functions: search, purchase, borrow, return.
--- All logic lives here — FastAPI calls these and does nothing else.
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 1. SEARCH BOOKS (pg_trgm fuzzy match)
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.search_books(p_query TEXT)
 RETURNS SETOF api.active_listings_cache
 LANGUAGE sql
@@ -24,9 +21,7 @@ COMMENT ON FUNCTION api.search_books IS
     'Fuzzy search over available listings by title or author using pg_trgm similarity. Results ordered by best match.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 2. GET LISTING (single listing detail)
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.get_listing(p_listing_id UUID)
 RETURNS SETOF api.active_listings_cache
 LANGUAGE sql
@@ -40,9 +35,7 @@ COMMENT ON FUNCTION api.get_listing IS
     'Returns a single listing row from the active listings view by listing_id.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 3. CREATE LISTING
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.create_listing(
     p_seller_id     UUID,
     p_isbn          isbn13,
@@ -88,9 +81,7 @@ COMMENT ON FUNCTION api.create_listing IS
     'Creates a new listing (sale or rent). Validates seller role and book existence. Status starts as pending_approval.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 4. PURCHASE BOOK — atomic, race-condition-proof via FOR UPDATE row lock
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.purchase_book(
     p_buyer_id   UUID,
     p_listing_id UUID
@@ -149,9 +140,7 @@ COMMENT ON FUNCTION api.purchase_book IS
     'Atomically transfers funds from buyer to seller, marks listing as sold, and records the transaction. FOR UPDATE prevents race conditions on concurrent purchases.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 5. BORROW BOOK
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.borrow_book(
     p_borrower_id UUID,
     p_listing_id  UUID
@@ -205,9 +194,7 @@ COMMENT ON FUNCTION api.borrow_book IS
     'Creates a lending record for a rent-type listing, setting due_at based on max_lend_days. The EXCLUDE constraint on lending_records prevents double-booking without any app-level check.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 6. RETURN BOOK — calculates and charges late fees automatically
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.return_book(p_record_id UUID)
 RETURNS money_amount
 LANGUAGE plpgsql
@@ -264,9 +251,7 @@ COMMENT ON FUNCTION api.return_book IS
     'Processes a book return. Automatically calculates and charges late fees (days_overdue * daily_rent_fee) with direct wallet debit/credit. Returns the fee charged (0 if on time).';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 7. ADD REVIEW
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.add_review(
     p_reviewer_id UUID,
     p_txn_id      UUID,
@@ -294,9 +279,7 @@ COMMENT ON FUNCTION api.add_review IS
     'Inserts a review. The constraint trigger trg_validate_review enforces that the reviewer is the actual buyer of the completed transaction.';
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 8. MANAGE WISHLIST
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.add_to_wishlist(p_user_id UUID, p_isbn isbn13)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -322,9 +305,7 @@ END;
 $$;
 
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- 9. TOP UP WALLET (for demo/testing purposes — admin action)
--- ─────────────────────────────────────────────────────────────────────────────
 CREATE FUNCTION api.topup_wallet(p_user_id UUID, p_amount money_amount)
 RETURNS money_amount
 LANGUAGE plpgsql
@@ -350,9 +331,7 @@ $$;
 COMMENT ON FUNCTION api.topup_wallet IS
     'Adds funds to a user wallet. Triggers the audit_log trigger automatically. For demo/admin use.';
 
--- ─────────────────────────────────────────────────────────────────────────────
 -- LUHN ALGORITHM VALIDATION
--- ─────────────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION api.is_valid_luhn(card_number TEXT)
 RETURNS BOOLEAN

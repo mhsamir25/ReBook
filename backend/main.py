@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from database import create_pool, close_pool
+from mongodb import connect_to_mongo, close_mongo_connection
 from exceptions import asyncpg_exception_handler
 from routers.auth_router        import router as auth_router
 from routers.listings_router    import router as listings_router
@@ -18,8 +19,10 @@ from routers.profile_router     import router as profile_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await create_pool()
+    await connect_to_mongo()
     yield
     await close_pool()
+    await close_mongo_connection()
 
 
 app = FastAPI(

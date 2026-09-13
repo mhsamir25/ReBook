@@ -1,13 +1,11 @@
 // src/pages/CreateListingPage.jsx
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { useAuth } from '../context/AuthContext';
 
 export default function CreateListingPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     isbn: '',
     title: '',
@@ -17,7 +15,7 @@ export default function CreateListingPage() {
     type: 'sale',
     price: '',
     daily_rent_fee: '',
-    max_lend_days: ''
+    max_lend_days: '',
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
@@ -25,6 +23,19 @@ export default function CreateListingPage() {
   const [bookFound, setBookFound] = useState(null);
   const [foundLocally, setFoundLocally] = useState(false);
   const [genres, setGenres] = useState([]);
+  const [images, setImages] = useState([]);
+  const [titleIndex, setTitleIndex] = useState(0);
+
+  const imagePreviews = useMemo(
+    () => images.map(file => ({ file, url: URL.createObjectURL(file) })),
+    [images]
+  );
+
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach(preview => URL.revokeObjectURL(preview.url));
+    };
+  }, [imagePreviews]);
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -32,16 +43,21 @@ export default function CreateListingPage() {
         const data = await api.getGenres();
         setGenres(data);
       } catch (err) {
-        console.error("Failed to load genres", err);
+        console.error('Failed to load genres', err);
       }
     };
+
     fetchGenres();
   }, []);
 
-  const handleIsbnChange = async (e) => {
-    const newIsbn = e.target.value;
-    setFormData({ ...formData, isbn: newIsbn });
-    
+  const updateField = (field, value) => {
+    setFormData(current => ({ ...current, [field]: value }));
+  };
+
+  const handleIsbnChange = async (event) => {
+    const newIsbn = event.target.value;
+    updateField('isbn', newIsbn);
+
     if (newIsbn.length === 13 && /^\d{13}$/.test(newIsbn)) {
       setIsFetchingBook(true);
       setBookFound(null);
@@ -55,7 +71,6 @@ export default function CreateListingPage() {
         let author = '';
         let found = false;
 
-        // 1. Try Local Database
         try {
           const localBook = await api.getBookByIsbn(newIsbn);
           if (localBook && localBook.title) {
@@ -64,67 +79,67 @@ export default function CreateListingPage() {
             found = true;
             setFoundLocally(true);
           }
-        } catch (e) {
-          console.error("Local database lookup error:", e);
+        } catch (err) {
+          console.error('Local database lookup error:', err);
         }
 
-        // 2. Try Google Books API
         if (!found) {
           setFoundLocally(false);
           try {
-            const gbResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${newIsbn}`, { signal: controller.signal });
+            const gbResponse = await fetch(
+              `https://www.googleapis.com/books/v1/volumes?q=isbn:${newIsbn}`,
+              { signal: controller.signal }
+            );
             if (gbResponse.ok) {
               const gbData = await gbResponse.json();
               if (gbData.items && gbData.items.length > 0) {
                 const bookData = gbData.items[0].volumeInfo;
                 title = bookData.title || '';
-                if (bookData.authors && bookData.authors.length > 0) {
-                  author = bookData.authors[0];
-                }
+                author = bookData.authors?.[0] || '';
                 found = true;
               }
             }
-          } catch(e) {
-            if (e.name === 'AbortError') throw e;
+          } catch (err) {
+            if (err.name === 'AbortError') throw err;
           }
         }
 
-        // 3. Fallback to Open Library API
         if (!found) {
           try {
-            const olResponse = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${newIsbn}&jscmd=data&format=json`, { signal: controller.signal });
+            const olResponse = await fetch(
+              `https://openlibrary.org/api/books?bibkeys=ISBN:${newIsbn}&jscmd=data&format=json`,
+              { signal: controller.signal }
+            );
             if (olResponse.ok) {
               const olData = await olResponse.json();
               const key = `ISBN:${newIsbn}`;
               if (olData[key]) {
                 const bookData = olData[key];
                 title = bookData.title || '';
-                if (bookData.authors && bookData.authors.length > 0) {
-                  author = bookData.authors[0].name;
-                }
+                author = bookData.authors?.[0]?.name || '';
                 found = true;
               }
             }
-          } catch(e) {
-            if (e.name === 'AbortError') throw e;
+          } catch (err) {
+            if (err.name === 'AbortError') throw err;
           }
         }
 
         clearTimeout(timeoutId);
 
         if (found) {
-          setFormData(prev => ({ ...prev, title, author }));
+          setFormData(current => ({ ...current, title, author }));
           setBookFound(true);
         } else {
           setBookFound(false);
           setFoundLocally(false);
-          setFormData(prev => ({ ...prev, title: '', author: '' }));
+          setFormData(current => ({ ...current, title: '', author: '' }));
         }
-      } catch (err) {
+      } catch {
         clearTimeout(timeoutId);
         setBookFound(false);
         setFoundLocally(false);
-        setFormData(prev => ({ ...prev, title: '', author: '' }));
+        setFormData(current => ({ ...current, title: '', author: '' }));
       } finally {
         setIsFetchingBook(false);
       }
@@ -133,11 +148,11 @@ export default function CreateListingPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setMsg({ text: '', type: '' });
-    
+
     try {
       const payload = {
         isbn: formData.isbn,
@@ -146,10 +161,11 @@ export default function CreateListingPage() {
         condition_id: parseInt(formData.condition_id, 10),
         type: formData.type,
       };
+
       if (formData.genre_id) {
         payload.genre_id = parseInt(formData.genre_id, 10);
       }
-      
+
       if (formData.type === 'sale') {
         payload.price = parseFloat(formData.price);
       } else {
@@ -158,6 +174,14 @@ export default function CreateListingPage() {
       }
 
       const res = await api.createListing(payload);
+
+      if (images.length > 0) {
+        const imgFormData = new FormData();
+        imgFormData.append('title_index', titleIndex);
+        images.forEach(image => imgFormData.append('files', image));
+        await api.uploadListingImages(res.listing_id, imgFormData);
+      }
+
       setMsg({ text: `Listing created successfully! ID: ${res.listing_id}`, type: 'success' });
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
@@ -167,106 +191,128 @@ export default function CreateListingPage() {
     }
   };
 
+  const handleImageChange = (event) => {
+    const files = Array.from(event.target.files);
+
+    if (files.length > 3) {
+      alert('You can only upload up to 3 images.');
+      event.target.value = null;
+      return;
+    }
+
+    const validFiles = files.filter(file => {
+      if (file.size > 2 * 1024 * 1024) {
+        alert(`File ${file.name} is too large. Max 2MB allowed.`);
+        return false;
+      }
+      return true;
+    });
+
+    setImages(validFiles);
+    if (titleIndex >= validFiles.length) {
+      setTitleIndex(0);
+    }
+  };
+
   return (
     <main className="page">
-      <div className="container" style={{ maxWidth: '600px' }}>
-        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.4rem' }}>List a Book</h1>
-        <p className="text-muted" style={{ marginBottom: '2rem' }}>Fill in the details to list your book for sale or rent.</p>
+      <div className="container narrow-container">
+        <header className="page-header">
+          <h1 className="page-title">List a Book</h1>
+          <p className="page-subtitle">Add the copy you want to sell or rent.</p>
+        </header>
 
-        <div className="card fade-up" style={{ padding: '2rem' }}>
+        <section className="card form-card fade-up">
           {msg.text && (
-            <div className={`alert ${msg.type === 'error' ? 'alert-error' : 'alert-success'}`} style={{ marginBottom: '1.5rem' }}>
+            <div className={`alert ${msg.type === 'error' ? 'alert-error' : 'alert-success'} mt-1`}>
               {msg.text}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <form onSubmit={handleSubmit} className="stack-form">
             <div className="form-group">
               <label className="form-label" htmlFor="isbn">ISBN-13</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="form-row">
                 <input
                   id="isbn"
                   type="text"
                   className="form-input"
-                  placeholder="e.g. 9780000000000"
+                  placeholder="9780000000000"
                   value={formData.isbn}
                   onChange={handleIsbnChange}
                   required
                   pattern="^\d{13}$"
                   title="Must be exactly 13 digits"
-                  style={{ flex: 1 }}
                 />
                 {isFetchingBook && <span className="spinner spinner-sm" />}
               </div>
               {bookFound === false && (
-                <div style={{ color: 'var(--color-error, #ff4d4f)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                  Book not found. Please enter Title and Author manually.
-                </div>
+                <p className="helper-text error">Book not found. Please enter the title and author manually.</p>
               )}
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="title">Title</label>
-              <input
-                id="title"
-                type="text"
-                className="form-input"
-                placeholder="Book Title"
-                value={formData.title}
-                onChange={e => setFormData({ ...formData, title: e.target.value })}
-                required
-                readOnly={bookFound === true}
-                style={bookFound === true ? { backgroundColor: '#f5f5f5', color: '#888' } : {}}
-              />
+            <div className="form-grid-two">
+              <div className="form-group">
+                <label className="form-label" htmlFor="title">Title</label>
+                <input
+                  id="title"
+                  type="text"
+                  className={`form-input ${bookFound === true ? 'is-readonly' : ''}`}
+                  placeholder="Book title"
+                  value={formData.title}
+                  onChange={event => updateField('title', event.target.value)}
+                  required
+                  readOnly={bookFound === true}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="author">Author</label>
+                <input
+                  id="author"
+                  type="text"
+                  className={`form-input ${bookFound === true ? 'is-readonly' : ''}`}
+                  placeholder="Author name"
+                  value={formData.author}
+                  onChange={event => updateField('author', event.target.value)}
+                  required
+                  readOnly={bookFound === true}
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="author">Author</label>
-              <input
-                id="author"
-                type="text"
-                className="form-input"
-                placeholder="Author Name"
-                value={formData.author}
-                onChange={e => setFormData({ ...formData, author: e.target.value })}
-                required
-                readOnly={bookFound === true}
-                style={bookFound === true ? { backgroundColor: '#f5f5f5', color: '#888' } : {}}
-              />
-            </div>
+            <div className="form-grid-two">
+              <div className="form-group">
+                <label className="form-label" htmlFor="genre">Genre</label>
+                <select
+                  id="genre"
+                  className="form-input"
+                  value={formData.genre_id}
+                  onChange={event => updateField('genre_id', event.target.value)}
+                  disabled={foundLocally}
+                >
+                  <option value="">Select a genre</option>
+                  {genres.map(item => (
+                    <option key={item.genre_id} value={item.genre_id}>{item.name}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="genre">Genre</label>
-              <select
-                id="genre"
-                className="form-input"
-                value={formData.genre_id}
-                onChange={e => setFormData({ ...formData, genre_id: e.target.value })}
-                disabled={foundLocally}
-                style={foundLocally ? { backgroundColor: '#f5f5f5', color: '#888' } : {}}
-              >
-                <option value="">Select a Genre</option>
-                {genres.map(g => (
-                  <option key={g.genre_id} value={g.genre_id}>{g.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-
-              <label className="form-label" htmlFor="condition">Condition</label>
-              <select
-                id="condition"
-                className="form-input"
-                value={formData.condition_id}
-                onChange={e => setFormData({ ...formData, condition_id: e.target.value })}
-              >
-                <option value={1}>New</option>
-                <option value={2}>Like New</option>
-                <option value={3}>Good</option>
-                <option value={4}>Fair</option>
-                <option value={5}>Poor</option>
-              </select>
+              <div className="form-group">
+                <label className="form-label" htmlFor="condition">Condition</label>
+                <select
+                  id="condition"
+                  className="form-input"
+                  value={formData.condition_id}
+                  onChange={event => updateField('condition_id', event.target.value)}
+                >
+                  <option value={1}>New</option>
+                  <option value={2}>Like New</option>
+                  <option value={3}>Good</option>
+                  <option value={4}>Fair</option>
+                  <option value={5}>Poor</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-group">
@@ -275,7 +321,7 @@ export default function CreateListingPage() {
                 id="type"
                 className="form-input"
                 value={formData.type}
-                onChange={e => setFormData({ ...formData, type: e.target.value })}
+                onChange={event => updateField('type', event.target.value)}
               >
                 <option value="sale">For Sale</option>
                 <option value="rent">For Rent</option>
@@ -292,12 +338,12 @@ export default function CreateListingPage() {
                   min="0.01"
                   step="0.01"
                   value={formData.price}
-                  onChange={e => setFormData({ ...formData, price: e.target.value })}
+                  onChange={event => updateField('price', event.target.value)}
                   required
                 />
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="form-grid-two">
                 <div className="form-group">
                   <label className="form-label" htmlFor="daily_rent_fee">Daily Fee (USD)</label>
                   <input
@@ -307,7 +353,7 @@ export default function CreateListingPage() {
                     min="0.01"
                     step="0.01"
                     value={formData.daily_rent_fee}
-                    onChange={e => setFormData({ ...formData, daily_rent_fee: e.target.value })}
+                    onChange={event => updateField('daily_rent_fee', event.target.value)}
                     required
                   />
                 </div>
@@ -320,18 +366,52 @@ export default function CreateListingPage() {
                     min="1"
                     step="1"
                     value={formData.max_lend_days}
-                    onChange={e => setFormData({ ...formData, max_lend_days: e.target.value })}
+                    onChange={event => updateField('max_lend_days', event.target.value)}
                     required
                   />
                 </div>
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: '0.5rem' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="book-images">Images</label>
+              <input
+                id="book-images"
+                type="file"
+                className="form-input"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+
+              {imagePreviews.length > 0 && (
+                <div className="image-preview-panel">
+                  <p className="image-preview-title">Title image</p>
+                  <div className="image-preview-grid">
+                    {imagePreviews.map((preview, index) => (
+                      <label
+                        key={preview.url}
+                        className={`image-preview-item ${titleIndex === index ? 'is-selected' : ''}`}
+                      >
+                        <img src={preview.url} alt={`Preview ${index + 1}`} />
+                        <input
+                          type="radio"
+                          name="titleImage"
+                          checked={titleIndex === index}
+                          onChange={() => setTitleIndex(index)}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
               {loading ? <span className="spinner spinner-sm" /> : 'Create Listing'}
             </button>
           </form>
-        </div>
+        </section>
       </div>
     </main>
   );

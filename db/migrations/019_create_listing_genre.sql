@@ -1,6 +1,7 @@
 -- 019_create_listing_genre.sql
 -- Replace create_listing function to accept a genre_id.
 
+SET search_path = public, core;
 DROP FUNCTION IF EXISTS api.create_listing(UUID, isbn13, SMALLINT, listing_type, money_amount, money_amount, SMALLINT, TEXT, TEXT, BOOLEAN);
 
 CREATE OR REPLACE FUNCTION api.create_listing(

@@ -1,5 +1,5 @@
 import asyncpg
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Response, HTTPException
 import httpx
 from typing import List
 from database import get_pool
@@ -41,7 +41,7 @@ async def get_genres():
     pool = get_pool()
     try:
         async with pool.acquire() as conn:
-            rows = await conn.fetch("SELECT genre_id, name FROM core.genres ORDER BY name")
+            rows = await conn.fetch("SELECT genre_id, name FROM api.genres_view ORDER BY name")
         return [dict(r) for r in rows]
     except asyncpg.PostgresError as exc:
         raise postgres_error_to_http(exc)
@@ -110,7 +110,7 @@ async def create_listing(
                 await conn.execute("SELECT set_config('app.current_user_id', $1, true)", user.user_id)
                 await conn.execute("SELECT set_config('app.current_role', $1, true)", user.role)
                 listing_id = await conn.fetchval(
-                    "SELECT api.create_listing($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+                    "SELECT api.create_listing($1::uuid, $2::public.isbn13, $3::smallint, $4::public.listing_type, $5::public.money_amount, $6::public.money_amount, $7::smallint, $8::text, $9::text, $10::boolean, $11::smallint)",
                     user.user_id,
                     body.isbn,
                     body.condition_id,
@@ -142,7 +142,7 @@ async def update_listing(
                 await conn.execute("SELECT set_config('app.current_user_id', $1, true)", user.user_id)
                 await conn.execute("SELECT set_config('app.current_role', $1, true)", user.role)
                 await conn.execute(
-                    "SELECT api.update_listing($1, $2, $3, $4, $5, $6, $7)",
+                    "SELECT api.update_listing($1::uuid, $2::uuid, $3::smallint, $4::public.listing_type, $5::public.money_amount, $6::public.money_amount, $7::smallint)",
                     user.user_id,
                     listing_id,
                     body.condition_id,
@@ -174,3 +174,82 @@ async def remove_listing(
                 )
     except asyncpg.PostgresError as exc:
         raise postgres_error_to_http(exc)
+
+
+@router.post("/{listing_id}/images", status_code=201)
+async def upload_listing_images(
+    listing_id: str,
+    title_index: int = Form(0),
+    files: List[UploadFile] = File(...),
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Upload up to 3 images for a listing. The listing must belong to the user."""
+    # 1. Verify listing ownership
+    pool = get_pool()
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow("SELECT seller_id FROM api.all_listings_view WHERE listing_id = $1::uuid", listing_id)
+            if not row:
+                raise HTTPException(status_code=404, detail="Listing not found")
+            if str(row['seller_id']) != user.user_id and user.role != 'admin':
+                raise HTTPException(status_code=403, detail="Not authorized to modify this listing")
+    except asyncpg.PostgresError as exc:
+        raise postgres_error_to_http(exc)
+
+    if len(files) > 3:
+        raise HTTPException(status_code=400, detail="Cannot upload more than 3 images")
+        
+    from mongodb import db_client
+    if db_client.db is None:
+        raise HTTPException(status_code=503, detail="Database connection not available")
+    
+    images_data = []
+    for idx, file in enumerate(files):
+        content = await file.read()
+        if len(content) > 2 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"File {file.filename} is too large (max 2MB)")
+        images_data.append({
+            "index": idx,
+            "data": content,
+            "content_type": file.content_type,
+            "is_title": (idx == title_index)
+        })
+        
+    # Upsert images document for the listing
+    await db_client.db.listing_images.update_one(
+        {"listing_id": listing_id},
+        {"$set": {"listing_id": listing_id, "images": images_data}},
+        upsert=True
+    )
+    return {"message": "Images uploaded successfully"}
+
+
+@router.get("/{listing_id}/image/title")
+async def get_title_image(listing_id: str):
+    """Get the title image of a listing."""
+    from mongodb import db_client
+    if db_client.db is None:
+        raise HTTPException(status_code=503, detail="Database connection not available")
+    doc = await db_client.db.listing_images.find_one({"listing_id": listing_id})
+    if not doc or not doc.get("images"):
+        raise HTTPException(status_code=404, detail="No images found")
+        
+    title_img = next((img for img in doc["images"] if img["is_title"]), doc["images"][0])
+    return Response(content=title_img["data"], media_type=title_img["content_type"])
+
+
+@router.get("/{listing_id}/images/{index}")
+async def get_image_by_index(listing_id: str, index: int):
+    """Get a specific image by its index."""
+    from mongodb import db_client
+    if db_client.db is None:
+        raise HTTPException(status_code=503, detail="Database connection not available")
+    doc = await db_client.db.listing_images.find_one({"listing_id": listing_id})
+    if not doc or not doc.get("images"):
+        raise HTTPException(status_code=404, detail="No images found")
+        
+    img = next((img for img in doc["images"] if img["index"] == index), None)
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found")
+        
+    return Response(content=img["data"], media_type=img["content_type"])

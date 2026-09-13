@@ -227,7 +227,7 @@ function AdminUsersTab({ items, onRemove, currentAdminId }) {
           <div className="item-meta">
             <span className={`badge ${user.role === 'admin' ? 'badge-danger' : 'badge-sale'}`}>{user.role}</span>
             {user.user_id !== currentAdminId && (
-               <button className="btn btn-outline btn-sm" style={{borderColor: 'var(--clr-red)', color: 'var(--clr-red)'}} onClick={() => onRemove(user.user_id)}>Remove</button>
+               <button className="btn btn-danger btn-sm" onClick={() => onRemove(user.user_id)}>Remove</button>
             )}
           </div>
         </li>
@@ -249,7 +249,7 @@ function AdminListingsTab({ items, onRemove }) {
           <div className="item-meta">
             <span className={`badge ${item.status === 'removed' ? 'badge-danger' : 'badge-rent'}`}>{item.status}</span>
             {item.status !== 'removed' && item.status !== 'rented' && item.status !== 'sold' && (
-               <button className="btn btn-outline btn-sm" style={{borderColor: 'var(--clr-red)', color: 'var(--clr-red)'}} onClick={() => onRemove(item.listing_id)}>Remove</button>
+               <button className="btn btn-danger btn-sm" onClick={() => onRemove(item.listing_id)}>Remove</button>
             )}
           </div>
         </li>
@@ -354,7 +354,7 @@ function LendingTab({ items }) {
              <span className={`badge ${item.returned_at ? 'badge-sale' : 'badge-rent'}`}>
                {item.returned_at ? 'Returned' : 'Out'}
              </span>
-             {item.late_fee_charged > 0 && <span className="late-fee positive">+$${item.late_fee_charged}</span>}
+             {item.late_fee_charged > 0 && <span className="late-fee positive">+${item.late_fee_charged}</span>}
           </div>
         </li>
       ))}
@@ -376,7 +376,7 @@ function BorrowingTab({ items }) {
              <span className={`badge ${item.returned_at ? 'badge-sale' : 'badge-rent'}`}>
                {item.returned_at ? 'Returned' : 'Borrowing'}
              </span>
-             {item.late_fee_charged > 0 && <span className="late-fee negative">-$${item.late_fee_charged}</span>}
+             {item.late_fee_charged > 0 && <span className="late-fee negative">-${item.late_fee_charged}</span>}
           </div>
         </li>
       ))}

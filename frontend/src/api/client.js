@@ -45,6 +45,22 @@ export const api = {
   getBookByIsbn: (isbn) => request('GET', `/listings/book/${isbn}`),
   getGenres:    ()    => request('GET', '/listings/genres'),
   createListing:(body)=> request('POST', '/listings/', body),
+  uploadListingImages: (id, formData) => {
+    const token = getToken();
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return fetch(`${BASE}/listings/${id}/images`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    }).then(async res => {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Upload failed');
+      }
+      return res.json();
+    });
+  },
   updateListing:(id, body) => request('PUT', `/listings/${id}`, body),
   removeListingUser: (id)  => request('DELETE', `/listings/${id}`),
 
